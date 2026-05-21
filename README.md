@@ -6,7 +6,10 @@ Esta versión está preparada como prototipo mínimo viable para clase:
 - `css/style.css` contiene la parte visual de la página.
 - `src/main.js` configura Phaser.
 - `src/scenes/GameScene.js` carga el mapa de Tiled y el personaje.
+- `src/scenes/EndScene.js` carga la escena final del juego
+- `src/scenes/MenuScene.js` carga la esceba de inicio del juego con el botón jugar
 - `assets/maps/mapa.json` contiene el tileset incrustado para evitar el fallo del `.tsx` externo.
+- `assets/sprites` contiene los sprites de las llaves, enemigos, puerta y el spritecheet del jugador
 
 ## Cómo abrirlo
 
@@ -18,8 +21,8 @@ No lo abras con doble clic. Usa Live Server / Live Preview en Visual Studio Code
 
 ## Controles
 
-- Flecha izquierda/derecha o A/D: moverse.
-- Flecha arriba, W o espacio: saltar.
+- Flecha izquierda/derecha: moverse.
+- Flecha arriba: saltar.
 
 ## Qué se corrigió
 
@@ -27,3 +30,4 @@ No lo abras con doble clic. Usa Live Server / Live Preview en Visual Studio Code
 - Mapa JSON modificado para que Phaser lea el tileset sin depender de `rock_packed.tsx`.
 - Estructura modular limpia.
 - Spawn automático del personaje en una zona segura del mapa.
+- Movimiento personaje y salto y se crearon animaciones
