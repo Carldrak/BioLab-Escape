@@ -16,6 +16,9 @@ export default class GameScene extends Phaser.Scene {
     this.load.image('llaveBronce', 'assets/sprites/key_bronze.png');
     this.load.image('puerta', 'assets/sprites/door.png');
     this.load.image('bomba', 'assets/sprites/bomba.png');
+
+    this.load.audio('getKey', './assets/sounds/rise.mp3');
+    this.load.audio('disparo', './assets/sounds/crash.mp3'); 
   }
 
   create() {
@@ -107,6 +110,8 @@ this.physics.add.collider(
       })
       .setScrollFactor(0)
       .setDepth(10);
+
+  this.disparoSound = this.sound.add('disparo');
   }
   
 
@@ -174,6 +179,7 @@ this.physics.add.collider(
   }
 
 disparar() {
+  this.disparoSound.play();
   const bomba = this.bomba.create(
     this.player.x + this.direccionJugador * 25,
     this.player.y,
@@ -183,5 +189,6 @@ disparar() {
   bomba.setVelocityX(500 * this.direccionJugador);
   bomba.setCollideWorldBounds(true);
   bomba.body.onWorldBounds = true;
+
 }
 }
