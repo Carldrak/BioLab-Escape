@@ -11,9 +11,15 @@ export default class GameScene extends Phaser.Scene {
     this.load.tilemapTiledJSON("mapa", "./assets/maps/mapa.json");
     this.load.image("rock_packed", "./assets/maps/rock_packed.png");
     this.load.spritesheet('dude1', './assets/sprites/dude1.png', { frameWidth: 32, frameHeight: 48 });
+    this.load.image('llaveOro', 'assets/sprites/key_gold.png');
+    this.load.image('llavePlata', 'assets/sprites/key_silver.png');
+    this.load.image('llaveBronce', 'assets/sprites/key_bronze.png');
+    this.load.image('puerta', 'assets/sprites/door.png');
+    this.load.image('bomba', 'assets/sprites/bomba.png');
   }
 
   create() {
+    // creación mapa
     const map = this.make.tilemap({ key: "mapa" });
     const tileset = map.addTilesetImage("rock_packed", "rock_packed");
 
@@ -31,6 +37,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.platforms.setCollisionByExclusion([-1, 0]);
 
+    //creación jugador
     const spawn = this.findSafeSpawn(map, this.platforms);
     this.player = this.physics.add.sprite(spawn.x, spawn.y, "dude1");
     this.player.setDisplaySize(36, 36);
@@ -68,6 +75,28 @@ export default class GameScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
 
+    this.teclaDisparo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+
+    this.bomba = this.physics.add.group({
+    allowGravity: false
+});
+this.direccionJugador = 1; // 1 = derecha, -1 = izquierda
+
+this.physics.world.on('worldbounds', (body) => {
+  if (body.gameObject && body.gameObject.texture.key === 'bomba') {
+    body.gameObject.destroy();
+  }
+});
+this.physics.add.collider(
+  this.bomba,
+  this.platforms,
+  (bomba) => {
+    bomba.destroy();
+  }
+);
+
+
+
     this.add
       .text(12, 12, "MVP funcional: mapa Tiled + personaje Phaser", {
         fontFamily: "Arial",
@@ -79,6 +108,7 @@ export default class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(10);
   }
+  
 
   update() {
 
@@ -86,10 +116,12 @@ export default class GameScene extends Phaser.Scene {
             {
             this.player.setVelocityX(-160);
             this.player.anims.play('left1', true);
+            this.direccionJugador = -1;
             } else if (this.cursors.right.isDown) 
             {        
             this.player.setVelocityX(160);
             this.player.anims.play('right1', true);
+            this.direccionJugador = 1;
             } else 
             {
             this.player.setVelocityX(0);
@@ -100,6 +132,9 @@ export default class GameScene extends Phaser.Scene {
             {
             this.player.setVelocityY(-500);
             }
+       if (Phaser.Input.Keyboard.JustDown(this.teclaDisparo)) {
+          this.disparar();
+}
   }
 
   findSafeSpawn(map, layer) {
@@ -137,4 +172,16 @@ export default class GameScene extends Phaser.Scene {
     });
     console.error(message);
   }
+
+disparar() {
+  const bomba = this.bomba.create(
+    this.player.x + this.direccionJugador * 25,
+    this.player.y,
+    'bomba'
+  );
+
+  bomba.setVelocityX(500 * this.direccionJugador);
+  bomba.setCollideWorldBounds(true);
+  bomba.body.onWorldBounds = true;
+}
 }
