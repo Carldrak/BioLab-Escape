@@ -3,26 +3,54 @@ export default class GameScene extends Phaser.Scene {
     super("GameScene");
     this.player = null;
     this.cursors = null;
-    this.keys = null;
     this.platforms = null;
+    this.enemigos = null;
+    this.enemigosVoladores = null;
+    this.bomba = null;
+    this.direccionJugador = 1; // 1 = derecha, -1 = izquierda
+    this.gameOver = false;
   }
 
   preload() {
+    // --------------------------------------------------------
+    // 1. CARGA DE ASSETS (Mapas, Sprites, Audios)
+    // --------------------------------------------------------
     this.load.tilemapTiledJSON("mapa", "./assets/maps/mapa.json");
     this.load.image("rock_packed", "./assets/maps/rock_packed.png");
-    this.load.spritesheet('dude1', './assets/sprites/dude1.png', { frameWidth: 32, frameHeight: 48 });
+    
+    // Entorno y Objetos
     this.load.image('llaveOro', 'assets/sprites/key_gold.png');
     this.load.image('llavePlata', 'assets/sprites/key_silver.png');
     this.load.image('llaveBronce', 'assets/sprites/key_bronze.png');
     this.load.image('puerta', 'assets/sprites/door.png');
     this.load.image('bomba', 'assets/sprites/bomba.png');
 
+    // Jugador
+    this.load.spritesheet('dude1', './assets/sprites/dude1.png', { frameWidth: 32, frameHeight: 48 });
+    
+    // Enemigo Terrestre
+    this.load.spritesheet('enemigo', './assets/sprites/EnemigoAndar.png', { frameWidth: 160, frameHeight: 160 });
+    this.load.spritesheet('enemigo_ataque', './assets/sprites/EnemigoAtaque.png', { frameWidth: 160, frameHeight: 160 });
+    
+    // Enemigo Volador (Fantasma)
+    this.load.spritesheet('enemigo_fantasma', './assets/sprites/EnemigoFantasma.png', { frameWidth: 32, frameHeight: 32 });
+    
+    // Efectos
+    this.load.spritesheet('explosion', './assets/sprites/Explosion.png', { frameWidth: 96, frameHeight: 96 });
+    
+    // Audios
     this.load.audio('getKey', './assets/sounds/rise.mp3');
     this.load.audio('disparo', './assets/sounds/crash.mp3'); 
+    this.load.audio('muerte_enemigo', './assets/sounds/MuerteEnemigo.wav');
+    this.load.audio('muerte_fantasma', './assets/sounds/MuerteFantasma.wav');
   }
 
   create() {
-    // creación mapa
+    this.gameOver = false;
+
+    // --------------------------------------------------------
+    // 2. CREACIÓN DEL ESCENARIO
+    // --------------------------------------------------------
     const map = this.make.tilemap({ key: "mapa" });
     const tileset = map.addTilesetImage("rock_packed", "rock_packed");
 
@@ -40,7 +68,9 @@ export default class GameScene extends Phaser.Scene {
 
     this.platforms.setCollisionByExclusion([-1, 0]);
 
-    //creación jugador
+    // --------------------------------------------------------
+    // 3. CREACIÓN Y CONFIGURACIÓN DEL JUGADOR
+    // --------------------------------------------------------
     const spawn = this.findSafeSpawn(map, this.platforms);
     this.player = this.physics.add.sprite(spawn.x, spawn.y, "dude1");
     this.player.setDisplaySize(36, 36);
@@ -48,102 +78,278 @@ export default class GameScene extends Phaser.Scene {
     this.player.setBounce(0.02);
     this.player.body.setSize(22, 30);
     this.player.body.setOffset((this.player.width - 22) / 2, this.player.height - 34);
-   
-    //animaciones jugador 
-   this.anims.create({
-        key: 'left1',
-        frames: this.anims.generateFrameNumbers('dude1', { start: 0, end: 3 }),
-        frameRate: 10,
-        repeat: -1
-        });
-    this.anims.create({
-        key: 'turn1',
-        frames: [ { key: 'dude1', frame: 4 } ], 
-        frameRate: 10,
-        repeat: -1
-        });
-    this.anims.create({
-        key: 'right1',
-        frames: this.anims.generateFrameNumbers('dude1', { start: 5, end: 8 }),
-        frameRate: 10,
-        repeat: -1
-        });
 
-    this.physics.add.collider(this.player, this.platforms);
+    // --------------------------------------------------------
+    // 4. CREACIÓN DE ANIMACIONES GLOBALES
+    // --------------------------------------------------------
+    this.crearAnimaciones();
 
+    // --------------------------------------------------------
+    // 5. CÁMARA Y CONTROLES
+    // --------------------------------------------------------
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setZoom(1.4);
 
     this.cursors = this.input.keyboard.createCursorKeys();
-
     this.teclaDisparo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
 
-    this.bomba = this.physics.add.group({
-    allowGravity: false
-});
-this.direccionJugador = 1; // 1 = derecha, -1 = izquierda
+    // --------------------------------------------------------
+    // 6. SISTEMA DE COMBATE Y ENEMIGOS
+    // --------------------------------------------------------
+    // Bombas
+    this.bomba = this.physics.add.group({ allowGravity: false });
+    this.disparoSound = this.sound.add('disparo');
+    this.muerteEnemigoSound = this.sound.add('muerte_enemigo');
+    this.muerteFantasmaSound = this.sound.add('muerte_fantasma');
+    // Enemigos Terrestres
+    this.enemigos = this.physics.add.group();
+    const enemigoTierra = this.enemigos.create(this.player.x, this.player.y + 160, 'enemigo');
+    enemigoTierra.setDisplaySize(36, 36);
+    enemigoTierra.setCollideWorldBounds(true);
+    enemigoTierra.direccion = -1;
+    enemigoTierra.anims.play('caminar_enemigo', true);
 
-this.physics.world.on('worldbounds', (body) => {
-  if (body.gameObject && body.gameObject.texture.key === 'bomba') {
-    body.gameObject.destroy();
-  }
-});
-this.physics.add.collider(
-  this.bomba,
-  this.platforms,
-  (bomba) => {
-    bomba.destroy();
-  }
-);
-
-
-
-    this.add
-      .text(12, 12, "MVP funcional: mapa Tiled + personaje Phaser", {
-        fontFamily: "Arial",
-        fontSize: "14px",
-        color: "#ffffff",
-        backgroundColor: "rgba(0,0,0,0.45)",
-        padding: { x: 8, y: 5 },
-      })
-      .setScrollFactor(0)
-      .setDepth(10);
-
-  this.disparoSound = this.sound.add('disparo');
-  }
-  
-
-  update() {
-
-        if (this.cursors.left.isDown) 
-            {
-            this.player.setVelocityX(-160);
-            this.player.anims.play('left1', true);
-            this.direccionJugador = -1;
-            } else if (this.cursors.right.isDown) 
-            {        
-            this.player.setVelocityX(160);
-            this.player.anims.play('right1', true);
-            this.direccionJugador = 1;
-            } else 
-            {
-            this.player.setVelocityX(0);
-            this.player.anims.play('turn1', true);
-            }   
+   // Enemigos Voladores (Fantasmas) - SIN GRAVEDAD
+    this.enemigosVoladores = this.physics.add.group({ allowGravity: false });
+    const enemigoFantasma = this.enemigosVoladores.create(this.player.x + 100, this.player.y - 50, 'enemigo_fantasma');
+    enemigoFantasma.setCollideWorldBounds(true);
+    enemigoFantasma.direccion = -1;
     
-        if (this.cursors.up.isDown && this.player.body.blocked.down)     
-            {
-            this.player.setVelocityY(-500);
-            }
-       if (Phaser.Input.Keyboard.JustDown(this.teclaDisparo)) {
-          this.disparar();
-}
+    // [NUEVO] Propiedades para controlar la patrulla por distancia
+    enemigoFantasma.startX = enemigoFantasma.x; // Guarda su posición inicial
+    enemigoFantasma.rangoPatrulla = 120;        // Píxeles que se moverá a cada lado (ajusta este número)
+    enemigoFantasma.persiguiendo = false;       // Bandera para saber qué estaba haciendo
+
+    enemigoFantasma.anims.play('fantasma_enemigo', true);
+
+    // --------------------------------------------------------
+    // 7. COLISIONES
+    // --------------------------------------------------------
+    // Entorno
+    this.physics.add.collider(this.player, this.platforms);
+    this.physics.add.collider(this.enemigos, this.platforms);
+    // Nota: El fantasma atraviesa las plataformas intencionalmente, 
+    // por lo que NO le añadimos colisión con this.platforms.
+
+    // Destrucción de la bomba al tocar el escenario o salir de pantalla
+    this.physics.world.on('worldbounds', (body) => {
+      if (body.gameObject && body.gameObject.texture.key === 'bomba') {
+        body.gameObject.destroy();
+      }
+    });
+    this.physics.add.collider(this.bomba, this.platforms, (bomba) => bomba.destroy());
+
+    // Ataque del Jugador (Overlap para no empujar)
+    this.physics.add.overlap(this.bomba, this.enemigos, this.matarEnemigo, null, this);
+    this.physics.add.overlap(this.bomba, this.enemigosVoladores, this.matarEnemigo, null, this);
+
+    // Daño al Jugador (Collider)
+    this.physics.add.collider(this.player, this.enemigos, this.danoJugador, null, this);
+    this.physics.add.collider(this.player, this.enemigosVoladores, this.danoJugador, null, this);
+
+    // --------------------------------------------------------
+    // 8. UI
+    // --------------------------------------------------------
+    this.add.text(12, 12, "MVP funcional: mapa Tiled + personaje Phaser", {
+      fontFamily: "Arial",
+      fontSize: "14px",
+      color: "#ffffff",
+      backgroundColor: "rgba(0,0,0,0.45)",
+      padding: { x: 8, y: 5 },
+    }).setScrollFactor(0).setDepth(10);
+  }
+
+  // ========================================================================
+  // BUCLE PRINCIPAL (Ejecutado cada frame)
+  // ========================================================================
+  update() {
+    if (this.gameOver) return;
+
+    this.actualizarJugador();
+    this.actualizarEnemigosTerrestres();
+    this.actualizarEnemigosFantasmas();
+  }
+
+  // ========================================================================
+  // MÉTODOS DE ACTUALIZACIÓN (Separados por limpieza)
+  // ========================================================================
+  
+  actualizarJugador() {
+    // Movimiento Horizontal
+    if (this.cursors.left.isDown) {
+      this.player.setVelocityX(-160);
+      this.player.anims.play('left1', true);
+      this.direccionJugador = -1;
+    } else if (this.cursors.right.isDown) {        
+      this.player.setVelocityX(160);
+      this.player.anims.play('right1', true);
+      this.direccionJugador = 1;
+    } else {
+      this.player.setVelocityX(0);
+      this.player.anims.play('turn1', true);
+    }   
+    
+    // Salto
+    if (this.cursors.up.isDown && this.player.body.blocked.down) {
+      this.player.setVelocityY(-500);
+    }
+    
+    // Disparo
+    if (Phaser.Input.Keyboard.JustDown(this.teclaDisparo)) {
+      this.disparar();
+    }
+  }
+
+  actualizarEnemigosTerrestres() {
+    this.enemigos.getChildren().forEach((enemigo) => {
+      const distancia = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemigo.x, enemigo.y);
+      const distanciaY = Math.abs(this.player.y - enemigo.y); 
+      const debajoY = enemigo.y + (enemigo.displayHeight / 2) + 5; 
+
+      // ESTADOS 1 y 2: PERSEGUIR Y ATACAR
+      if (distancia < 250 && distanciaY < 60) {
+        const direccionHaciaJugador = this.player.x > enemigo.x ? 1 : -1;
+        enemigo.setFlipX(direccionHaciaJugador === 1);
+
+        const frenteX_haciaJugador = enemigo.x + (enemigo.displayWidth / 2 * direccionHaciaJugador);
+        const tileAlBorde_haciaJugador = this.platforms.getTileAtWorldXY(frenteX_haciaJugador, debajoY);
+        
+        const hayPrecipicioHaciaJugador = !tileAlBorde_haciaJugador && enemigo.body.blocked.down;
+        const hayParedHaciaJugador = (direccionHaciaJugador === 1 && enemigo.body.blocked.right) || 
+                                     (direccionHaciaJugador === -1 && enemigo.body.blocked.left);
+
+        if (hayPrecipicioHaciaJugador || hayParedHaciaJugador) {
+          enemigo.setVelocityX(0);
+          if (distancia < 60) {
+             enemigo.anims.play('ataque_enemigo', true); 
+          } else {
+             enemigo.anims.stop(); 
+          }
+        } else {
+          enemigo.direccion = direccionHaciaJugador;
+          enemigo.setVelocityX(80 * enemigo.direccion); 
+          
+          if (distancia < 60) {
+            enemigo.anims.play('ataque_enemigo', true); 
+          } else {
+            enemigo.anims.play('caminar_enemigo', true); 
+          }
+        }
+      } 
+      // ESTADO 3: PATRULLAR
+      else {
+        const frenteX = enemigo.x + (enemigo.displayWidth / 2 * enemigo.direccion);
+        const tileAlBorde = this.platforms.getTileAtWorldXY(frenteX, debajoY);
+        const hayPrecipicio = !tileAlBorde && enemigo.body.blocked.down;
+        const hayPared = enemigo.body.blocked.right || enemigo.body.blocked.left;
+
+        if (hayPrecipicio || hayPared) {
+          enemigo.direccion *= -1; 
+        }
+        
+        enemigo.setVelocityX(50 * enemigo.direccion);
+        enemigo.anims.play('caminar_enemigo', true);
+        enemigo.setFlipX(enemigo.direccion === 1);
+      }
+    });
+  }
+
+  actualizarEnemigosFantasmas() {
+    this.enemigosVoladores.getChildren().forEach((fantasma) => {
+      const distancia = Phaser.Math.Distance.Between(this.player.x, this.player.y, fantasma.x, fantasma.y);
+
+      // Si estás cerca (rango de agresión)
+      if (distancia < 200) {
+        // Persigue al jugador en línea recta flotando a través de obstáculos
+        this.physics.moveToObject(fantasma, this.player, 70); 
+        fantasma.setFlipX(fantasma.body.velocity.x > 0);
+      } 
+      // Si estás lejos (Patrulla)
+      else {
+        fantasma.setVelocityX(40 * fantasma.direccion);
+        // Oscilación matemática (Seno) para el efecto de flotar
+        fantasma.setVelocityY(Math.sin(this.time.now / 300) * 30);
+        fantasma.setFlipX(fantasma.direccion === 1);
+
+        // Si choca contra los límites del mundo (o paredes si les pones colisión)
+        if (fantasma.body.blocked.right || fantasma.body.blocked.left) {
+          fantasma.direccion *= -1;
+        }
+      }
+    });
+  }
+
+  // ========================================================================
+  // ACCIONES Y LÓGICA DE JUEGO
+  // ========================================================================
+  
+  disparar() {
+    this.disparoSound.play();
+    const bomba = this.bomba.create(
+      this.player.x + this.direccionJugador * 25,
+      this.player.y,
+      'bomba'
+    );
+    bomba.setVelocityX(500 * this.direccionJugador);
+    bomba.setCollideWorldBounds(true);
+    bomba.body.onWorldBounds = true;
+  }
+
+  matarEnemigo(bomba, enemigo) {
+    const expX = enemigo.x;
+    const expY = enemigo.y;
+
+    bomba.destroy();
+    enemigo.destroy();
+
+    const explosion = this.add.sprite(expX, expY, 'explosion');
+    explosion.play('efecto_explosion');
+
+    explosion.on('animationcomplete', () => {
+      explosion.destroy();
+    });
+    if (enemigo.texture.key === 'enemigo') {
+      this.muerteEnemigoSound.play();
+    } else {
+      this.muerteFantasmaSound.play();
+    }
+  }
+
+  danoJugador(jugador, enemigo) {
+    this.gameOver = true;
+    this.physics.pause();
+    jugador.setTint(0xff0000);
+    jugador.anims.play('turn1');
+    
+    this.time.delayedCall(1000, () => {
+      this.scene.restart();
+    });
+  }
+
+  // ========================================================================
+  // UTILIDADES
+  // ========================================================================
+
+  crearAnimaciones() {
+    // Animaciones del Jugador
+    this.anims.create({ key: 'left1', frames: this.anims.generateFrameNumbers('dude1', { start: 0, end: 3 }), frameRate: 10, repeat: -1 });
+    this.anims.create({ key: 'turn1', frames: [ { key: 'dude1', frame: 4 } ], frameRate: 10, repeat: -1 });
+    this.anims.create({ key: 'right1', frames: this.anims.generateFrameNumbers('dude1', { start: 5, end: 8 }), frameRate: 10, repeat: -1 });
+
+    // Animaciones Enemigos Terrestres
+    this.anims.create({ key: 'caminar_enemigo', frames: this.anims.generateFrameNumbers('enemigo', { start: 0, end: 5 }), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'ataque_enemigo', frames: this.anims.generateFrameNumbers('enemigo_ataque', { start: 0, end: 7 }), frameRate: 10, repeat: -1 });
+
+    // Animaciones Fantasma
+    this.anims.create({ key: 'fantasma_enemigo', frames: this.anims.generateFrameNumbers('enemigo_fantasma', { start: 0, end: 6 }), frameRate: 6, repeat: -1 });
+
+    // Efectos
+    this.anims.create({ key: 'efecto_explosion', frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 12 }), frameRate: 15, repeat: 0, hideOnComplete: true });
   }
 
   findSafeSpawn(map, layer) {
-    // Busca una casilla vacía con suelo justo debajo. Así evita aparecer dentro de una pared.
     for (let y = 1; y < map.height - 2; y += 1) {
       for (let x = 1; x < map.width - 1; x += 1) {
         const current = layer.getTileAt(x, y);
@@ -162,7 +368,6 @@ this.physics.add.collider(
         }
       }
     }
-
     return { x: 90, y: 90 };
   }
 
@@ -177,18 +382,38 @@ this.physics.add.collider(
     });
     console.error(message);
   }
+  actualizarEnemigosFantasmas() {
+    this.enemigosVoladores.getChildren().forEach((fantasma) => {
+      const distancia = Phaser.Math.Distance.Between(this.player.x, this.player.y, fantasma.x, fantasma.y);
 
-disparar() {
-  this.disparoSound.play();
-  const bomba = this.bomba.create(
-    this.player.x + this.direccionJugador * 25,
-    this.player.y,
-    'bomba'
-  );
+      // ESTADO 1: PERSEGUIR
+      if (distancia < 200) {
+        fantasma.persiguiendo = true; 
+        this.physics.moveToObject(fantasma, this.player, 70); 
+        
+        // [CORREGIDO] Invertimos la lógica: ahora voltea si la velocidad en X es menor a 0
+        fantasma.setFlipX(fantasma.body.velocity.x < 0); 
+      } 
+      // ESTADO 2: PATRULLAR
+      else {
+        if (fantasma.persiguiendo) {
+          fantasma.persiguiendo = false;
+          fantasma.startX = fantasma.x; 
+        }
 
-  bomba.setVelocityX(500 * this.direccionJugador);
-  bomba.setCollideWorldBounds(true);
-  bomba.body.onWorldBounds = true;
+        fantasma.setVelocityX(40 * fantasma.direccion);
+        fantasma.setVelocityY(Math.sin(this.time.now / 300) * 30); 
+        
+        // [CORREGIDO] Invertimos la lógica: ahora voltea si la dirección es -1
+        fantasma.setFlipX(fantasma.direccion === -1);
 
-}
+        if (fantasma.x > fantasma.startX + fantasma.rangoPatrulla) {
+          fantasma.direccion = -1;
+        } 
+        else if (fantasma.x < fantasma.startX - fantasma.rangoPatrulla) {
+          fantasma.direccion = 1;
+        }
+      }
+    });
+  }
 }
