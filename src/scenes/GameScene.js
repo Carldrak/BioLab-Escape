@@ -12,6 +12,14 @@ export default class GameScene extends Phaser.Scene {
 
     this.cantidadEnemigosTerrestres = 10;
     this.cantidadEnemigosVoladores = 10;
+
+    this.vidaMaxima = 3;
+    this.vida = 3;
+    this.cantidadPowerUpsVida = 5;
+
+    this.powerUpsVida = null;
+    this.textoVida = null;
+
   }
 
   preload() {
@@ -27,6 +35,7 @@ export default class GameScene extends Phaser.Scene {
     this.load.image('llaveBronce', 'assets/sprites/key_bronze.png');
     this.load.image('puerta', 'assets/sprites/door.png');
     this.load.image('bomba', 'assets/sprites/bomba.png');
+    this.load.spritesheet('corazon', 'assets/sprites/heart.png', {frameWidth: 32,frameHeight: 32});
 
     // Jugador
     this.load.spritesheet('dude1', './assets/sprites/dude1.png', { frameWidth: 32, frameHeight: 48 });
@@ -133,6 +142,21 @@ export default class GameScene extends Phaser.Scene {
     fantasma.anims.play('fantasma_enemigo', true);
 }
 
+    //power-ups de vida (corazones)
+    this.powerUpsVida = this.physics.add.group({
+      allowGravity: false,
+      immovable: true
+  });
+
+  for (let i = 0; i < this.cantidadPowerUpsVida; i++) {
+    const pos = this.findRandomAirSpawn(map, this.platforms);
+    const corazon = this.powerUpsVida.create(pos.x, pos.y, 'corazon');
+
+    corazon.setDisplaySize(24, 24);
+    corazon.startY = corazon.y;
+    corazon.movimientoOffset = Phaser.Math.Between(0, 1000);
+    corazon.anims.play('corazon_animado', true);
+}
     // --------------------------------------------------------
     // 7. COLISIONES
     // --------------------------------------------------------
@@ -158,6 +182,8 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.enemigos, this.danoJugador, null, this);
     this.physics.add.collider(this.player, this.enemigosVoladores, this.danoJugador, null, this);
 
+    // Recolección de Power-Ups de Vida
+    this.physics.add.overlap(this.player, this.powerUpsVida, this.recogerPowerUpVida, null, this);
     // --------------------------------------------------------
     // 8. UI
     // --------------------------------------------------------
@@ -168,6 +194,14 @@ export default class GameScene extends Phaser.Scene {
       backgroundColor: "rgba(0,0,0,0.45)",
       padding: { x: 8, y: 5 },
     }).setScrollFactor(0).setDepth(10);
+
+    this.textoVida = this.add.text(12, 76, `Vida: ${this.vida}`, {
+      fontFamily: "Arial",
+      fontSize: "16px",
+      color: "#ffffff",
+      backgroundColor: "rgba(0,0,0,0.55)",
+      padding: { x: 8, y: 5 },
+}).setScrollFactor(0).setDepth(10);
   }
 
   // ========================================================================
@@ -179,6 +213,7 @@ export default class GameScene extends Phaser.Scene {
     this.actualizarJugador();
     this.actualizarEnemigosTerrestres();
     this.actualizarEnemigosFantasmas();
+    this.actualizarPowerUpsVida();
   }
 
   // ========================================================================
@@ -293,7 +328,26 @@ export default class GameScene extends Phaser.Scene {
   // ========================================================================
   // ACCIONES Y LÓGICA DE JUEGO
   // ========================================================================
-  
+  actualizarPowerUpsVida() {
+  this.powerUpsVida.getChildren().forEach((corazon) => {
+    corazon.y = corazon.startY + Math.sin((this.time.now + corazon.movimientoOffset) / 300) * 8;
+  });
+}
+
+  actualizarTextoVida() {
+  if (this.textoVida) {
+    this.textoVida.setText(`Vida: ${this.vida}`);
+  }
+}
+
+recogerPowerUpVida(jugador, corazon) {
+  corazon.destroy();
+
+  this.vida = Math.min(this.vida + 1, this.vidaMaxima);
+  this.actualizarTextoVida();
+
+  this.sound.play('getKey');
+}
   disparar() {
     this.disparoSound.play();
     const bomba = this.bomba.create(
@@ -327,6 +381,33 @@ export default class GameScene extends Phaser.Scene {
   }
 
   danoJugador(jugador, enemigo) {
+  if (jugador.invulnerable) {
+    return;
+  }
+
+  this.vida -= 1;
+  this.actualizarTextoVida();
+
+  jugador.invulnerable = true;
+  jugador.setTint(0xff0000);
+
+  this.time.delayedCall(800, () => {
+    jugador.clearTint();
+    jugador.invulnerable = false;
+  });
+
+  if (this.vida <= 0) {
+    this.gameOver = true;
+    this.physics.pause();
+    jugador.setTint(0xff0000);
+    jugador.anims.play('turn1');
+
+    this.time.delayedCall(1000, () => {
+      this.scene.restart();
+    });
+  }
+}
+  /*danoJugador(jugador, enemigo) {
     this.gameOver = true;
     this.physics.pause();
     jugador.setTint(0xff0000);
@@ -335,7 +416,7 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(1000, () => {
       this.scene.restart();
     });
-  }
+  }*/
 
   // ========================================================================
   // UTILIDADES
@@ -356,6 +437,9 @@ export default class GameScene extends Phaser.Scene {
 
     // Efectos
     this.anims.create({ key: 'efecto_explosion', frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 12 }), frameRate: 15, repeat: 0, hideOnComplete: true });
+
+    // Animación Corazón (Power-Up de Vida)
+    this.anims.create({ key: 'corazon_anim', frames: this.anims.generateFrameNumbers('corazon', { start: 0, end: 9 }), frameRate: 10, repeat: -1 });
   }
 
   findSafeSpawn(map, layer) {
