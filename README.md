@@ -23,6 +23,7 @@ No lo abras con doble clic. Usa Live Server / Live Preview en Visual Studio Code
 
 - Flecha izquierda/derecha: moverse.
 - Flecha arriba: saltar.
+- Tecla X: disparar
 
 ## Qué se corrigió
 
