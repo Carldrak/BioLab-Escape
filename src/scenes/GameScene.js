@@ -9,6 +9,9 @@ export default class GameScene extends Phaser.Scene {
     this.bomba = null;
     this.direccionJugador = 1; // 1 = derecha, -1 = izquierda
     this.gameOver = false;
+
+    this.cantidadEnemigosTerrestres = 10;
+    this.cantidadEnemigosVoladores = 10;
   }
 
   preload() {
@@ -103,26 +106,32 @@ export default class GameScene extends Phaser.Scene {
     this.disparoSound = this.sound.add('disparo');
     this.muerteEnemigoSound = this.sound.add('muerte_enemigo');
     this.muerteFantasmaSound = this.sound.add('muerte_fantasma');
-    // Enemigos Terrestres
+
+    // Enemigos Terrestres (creación aleatoria  )
     this.enemigos = this.physics.add.group();
-    const enemigoTierra = this.enemigos.create(this.player.x, this.player.y + 160, 'enemigo');
-    enemigoTierra.setDisplaySize(36, 36);
-    enemigoTierra.setCollideWorldBounds(true);
-    enemigoTierra.direccion = -1;
-    enemigoTierra.anims.play('caminar_enemigo', true);
 
-   // Enemigos Voladores (Fantasmas) - SIN GRAVEDAD
+    for (let i = 0; i < this.cantidadEnemigosTerrestres; i++) {
+    const pos = this.findRandomGroundSpawn(map, this.platforms);
+    const enemigo = this.enemigos.create(pos.x, pos.y, 'enemigo');
+    enemigo.setDisplaySize(36, 36);
+    enemigo.setCollideWorldBounds(true);
+    enemigo.direccion = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
+    enemigo.anims.play('caminar_enemigo', true);
+}
+
+    // Enemigos Voladores (Fantasmas) (creación aleatoria)
     this.enemigosVoladores = this.physics.add.group({ allowGravity: false });
-    const enemigoFantasma = this.enemigosVoladores.create(this.player.x + 100, this.player.y - 50, 'enemigo_fantasma');
-    enemigoFantasma.setCollideWorldBounds(true);
-    enemigoFantasma.direccion = -1;
-    
-    // [NUEVO] Propiedades para controlar la patrulla por distancia
-    enemigoFantasma.startX = enemigoFantasma.x; // Guarda su posición inicial
-    enemigoFantasma.rangoPatrulla = 120;        // Píxeles que se moverá a cada lado (ajusta este número)
-    enemigoFantasma.persiguiendo = false;       // Bandera para saber qué estaba haciendo
 
-    enemigoFantasma.anims.play('fantasma_enemigo', true);
+    for (let i = 0; i < this.cantidadEnemigosVoladores; i++) {
+    const pos = this.findRandomAirSpawn(map, this.platforms);
+    const fantasma = this.enemigosVoladores.create(pos.x, pos.y, 'enemigo_fantasma');
+    fantasma.setCollideWorldBounds(true);
+    fantasma.direccion = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
+    fantasma.startX = fantasma.x;
+    fantasma.rangoPatrulla = Phaser.Math.Between(90, 180);
+    fantasma.persiguiendo = false;         
+    fantasma.anims.play('fantasma_enemigo', true);
+}
 
     // --------------------------------------------------------
     // 7. COLISIONES
@@ -370,6 +379,56 @@ export default class GameScene extends Phaser.Scene {
     }
     return { x: 90, y: 90 };
   }
+  
+  findRandomGroundSpawn(map, layer) {
+  const maxIntentos = 200;
+
+  for (let i = 0; i < maxIntentos; i++) {
+    const tileX = Phaser.Math.Between(1, map.width - 2);
+    const tileY = Phaser.Math.Between(1, map.height - 3);
+
+    const current = layer.getTileAt(tileX, tileY);
+    const above = layer.getTileAt(tileX, tileY - 1);
+    const below = layer.getTileAt(tileX, tileY + 1);
+
+    const isEmpty = !current || current.index === -1 || current.index === 0;
+    const isAboveEmpty = !above || above.index === -1 || above.index === 0;
+    const hasFloor = below && below.index > 0;
+
+    if (isEmpty && isAboveEmpty && hasFloor) {
+      return {
+        x: tileX * map.tileWidth + map.tileWidth / 2,
+        y: tileY * map.tileHeight,
+      };
+    }
+  }
+
+  return { x: 120, y: 120 };
+}
+
+  findRandomAirSpawn(map, layer) {
+    const maxIntentos = 200;
+
+    for (let i = 0; i < maxIntentos; i++) {
+      const tileX = Phaser.Math.Between(1, map.width - 2);
+      const tileY = Phaser.Math.Between(1, map.height - 3);
+
+      const current = layer.getTileAt(tileX, tileY);
+      const above = layer.getTileAt(tileX, tileY - 1);
+
+      const isEmpty = !current || current.index === -1 || current.index === 0;
+      const isAboveEmpty = !above || above.index === -1 || above.index === 0;
+
+    if (isEmpty && isAboveEmpty) {
+      return {
+        x: tileX * map.tileWidth + map.tileWidth / 2,
+        y: tileY * map.tileHeight + map.tileHeight / 2,
+      };
+    }
+  }
+
+  return { x: 200, y: 100 };
+}
 
   showError(message) {
     this.add.text(30, 30, message, {
