@@ -59,6 +59,7 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.gameOver = false;
+    this.vida = this.vidaMaxima;
 
     // --------------------------------------------------------
     // 2. CREACIÓN DEL ESCENARIO
@@ -108,7 +109,7 @@ export default class GameScene extends Phaser.Scene {
     this.teclaDisparo = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
 
     // --------------------------------------------------------
-    // 6. SISTEMA DE COMBATE Y ENEMIGOS
+    // 6. SISTEMA DE COMBATE, ENEMIGOS Y POWER UPS
     // --------------------------------------------------------
     // Bombas
     this.bomba = this.physics.add.group({ allowGravity: false });
@@ -141,22 +142,8 @@ export default class GameScene extends Phaser.Scene {
     fantasma.persiguiendo = false;         
     fantasma.anims.play('fantasma_enemigo', true);
 }
-
-    //power-ups de vida (corazones)
-    this.powerUpsVida = this.physics.add.group({
-      allowGravity: false,
-      immovable: true
-  });
-
-  for (let i = 0; i < this.cantidadPowerUpsVida; i++) {
-    const pos = this.findRandomAirSpawn(map, this.platforms);
-    const corazon = this.powerUpsVida.create(pos.x, pos.y, 'corazon');
-
-    corazon.setDisplaySize(24, 24);
-    corazon.startY = corazon.y;
-    corazon.movimientoOffset = Phaser.Math.Between(0, 1000);
-    corazon.anims.play('corazon_animado', true);
-}
+    // Power-Ups de Vida (corazones) (creación aleatoria)
+    this.crearPowerUpsVida(map);
     // --------------------------------------------------------
     // 7. COLISIONES
     // --------------------------------------------------------
@@ -195,13 +182,14 @@ export default class GameScene extends Phaser.Scene {
       padding: { x: 8, y: 5 },
     }).setScrollFactor(0).setDepth(10);
 
-    this.textoVida = this.add.text(12, 76, `Vida: ${this.vida}`, {
+    this.textoVida = this.add.text(12, 76, "", {
       fontFamily: "Arial",
       fontSize: "16px",
       color: "#ffffff",
       backgroundColor: "rgba(0,0,0,0.55)",
       padding: { x: 8, y: 5 },
 }).setScrollFactor(0).setDepth(10);
+    this.actualizarTextoVida();
   }
 
   // ========================================================================
@@ -328,26 +316,48 @@ export default class GameScene extends Phaser.Scene {
   // ========================================================================
   // ACCIONES Y LÓGICA DE JUEGO
   // ========================================================================
+  crearPowerUpsVida(map) {
+    this.powerUpsVida = this.physics.add.group({
+      allowGravity: false,
+      immovable: true
+    });
+
+    for (let i = 0; i < this.cantidadPowerUpsVida; i++) {
+      const pos = this.findRandomAirSpawn(map, this.platforms);
+      const corazon = this.powerUpsVida.create(pos.x, pos.y, 'corazon');
+
+      corazon.setDisplaySize(24, 24);
+      corazon.body.setSize(24, 24);
+      corazon.startY = corazon.y;
+      corazon.movimientoOffset = Phaser.Math.Between(0, 1000);
+      corazon.anims.play('corazon_anim', true);
+    }
+  }
+
   actualizarPowerUpsVida() {
-  this.powerUpsVida.getChildren().forEach((corazon) => {
-    corazon.y = corazon.startY + Math.sin((this.time.now + corazon.movimientoOffset) / 300) * 8;
-  });
-}
+    this.powerUpsVida.getChildren().forEach((corazon) => {
+      corazon.y = corazon.startY + Math.sin((this.time.now + corazon.movimientoOffset) / 300) * 8;
+    });
+  }
 
   actualizarTextoVida() {
-  if (this.textoVida) {
-    this.textoVida.setText(`Vida: ${this.vida}`);
+    if (this.textoVida) {
+      this.textoVida.setText(`Vida: ${this.vida}/${this.vidaMaxima}`);
+    }
   }
-}
 
-recogerPowerUpVida(jugador, corazon) {
-  corazon.destroy();
+  recogerPowerUpVida(jugador, corazon) {
+    if (this.vida >= this.vidaMaxima) {
+      return;
+    }
 
-  this.vida = Math.min(this.vida + 1, this.vidaMaxima);
-  this.actualizarTextoVida();
+    corazon.destroy();
 
-  this.sound.play('getKey');
-}
+    this.vida = Math.min(this.vida + 1, this.vidaMaxima);
+    this.actualizarTextoVida();
+
+    this.sound.play('getKey');
+  }
   disparar() {
     this.disparoSound.play();
     const bomba = this.bomba.create(
@@ -381,42 +391,34 @@ recogerPowerUpVida(jugador, corazon) {
   }
 
   danoJugador(jugador, enemigo) {
-  if (jugador.invulnerable) {
-    return;
-  }
+    if (jugador.invulnerable || this.gameOver) {
+      return;
+    }
 
-  this.vida -= 1;
-  this.actualizarTextoVida();
+    this.vida = Math.max(this.vida - 1, 0);
+    this.actualizarTextoVida();
 
-  jugador.invulnerable = true;
-  jugador.setTint(0xff0000);
-
-  this.time.delayedCall(800, () => {
-    jugador.clearTint();
-    jugador.invulnerable = false;
-  });
-
-  if (this.vida <= 0) {
-    this.gameOver = true;
-    this.physics.pause();
+    jugador.invulnerable = true;
     jugador.setTint(0xff0000);
-    jugador.anims.play('turn1');
 
-    this.time.delayedCall(1000, () => {
-      this.scene.restart();
+    this.time.delayedCall(800, () => {
+      if (!this.gameOver) {
+        jugador.clearTint();
+        jugador.invulnerable = false;
+      }
     });
+
+    if (this.vida <= 0) {
+      this.gameOver = true;
+      this.physics.pause();
+      jugador.setTint(0xff0000);
+      jugador.anims.play('turn1');
+
+      this.time.delayedCall(1000, () => {
+        this.scene.restart();
+      });
+    }
   }
-}
-  /*danoJugador(jugador, enemigo) {
-    this.gameOver = true;
-    this.physics.pause();
-    jugador.setTint(0xff0000);
-    jugador.anims.play('turn1');
-    
-    this.time.delayedCall(1000, () => {
-      this.scene.restart();
-    });
-  }*/
 
   // ========================================================================
   // UTILIDADES
