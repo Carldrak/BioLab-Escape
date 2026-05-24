@@ -108,7 +108,7 @@ init(data) {
     this.gameOver = false;
     this.gameOverStarted = false;
     // --------------------------------------------------------
-    // 2. CREACIÃ“N DEL ESCENARIO
+    // 2. CREACIÓN DEL ESCENARIO
     // --------------------------------------------------------
     const map = this.make.tilemap({ key: "mapa" });
     const tileset = map.addTilesetImage("rock_packed", "rock_packed");
@@ -121,14 +121,14 @@ init(data) {
     this.platforms = map.createLayer("plataformas", tileset, 0, 0);
 
     if (!this.platforms) {
-      this.showError("No se encontrÃ³ la capa 'plataformas' en el mapa.");
+      this.showError("No se encontró la capa 'plataformas' en el mapa.");
       return;
     }
 
     this.platforms.setCollisionByExclusion([-1, 0]);
 
     // --------------------------------------------------------
-    // 3. CREACIÃ“N Y CONFIGURACIÃ“N DEL JUGADOR
+    // 3. CREACIÓN Y CONFIGURACIÓN DEL JUGADOR
     // --------------------------------------------------------
     const spawn = this.findSafeSpawn(map, this.platforms);
     this.player = this.physics.add.sprite(spawn.x, spawn.y, "dude1");
@@ -139,12 +139,12 @@ init(data) {
     this.player.body.setOffset((this.player.width - 22) / 2, this.player.height - 34);
 
     // --------------------------------------------------------
-    // 4. CREACIÃ“N DE ANIMACIONES GLOBALES
+    // 4. CREACIÓN DE ANIMACIONES GLOBALES
     // --------------------------------------------------------
     this.crearAnimaciones();
 
     // --------------------------------------------------------
-    // 5. CÃMARA Y CONTROLES
+    // 5. CÁMARA Y CONTROLES
     // --------------------------------------------------------
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -163,7 +163,7 @@ init(data) {
     this.muerteEnemigoSound = this.sound.add('muerte_enemigo');
     this.muerteFantasmaSound = this.sound.add('muerte_fantasma');
 
-    // Enemigos Terrestres (creaciÃ³n aleatoria  )
+    // Enemigos Terrestres (creación aleatoria  )
     this.enemigos = this.physics.add.group();
 
     for (let i = 0; i < this.cantidadEnemigosTerrestres; i++) {
@@ -175,7 +175,7 @@ init(data) {
     enemigo.anims.play('caminar_enemigo', true);
 }
 
-    // Enemigos Voladores (Fantasmas) (creaciÃ³n aleatoria)
+    // Enemigos Voladores (Fantasmas) (creación aleatoria)
     this.enemigosVoladores = this.physics.add.group({ allowGravity: false });
 
     for (let i = 0; i < this.cantidadEnemigosVoladores; i++) {
@@ -188,7 +188,7 @@ init(data) {
     fantasma.persiguiendo = false;         
     fantasma.anims.play('fantasma_enemigo', true);
 }
-    // Power-Ups de Vida (corazones) (creaciÃ³n aleatoria)
+    // Power-Ups de Vida (corazones) (creación aleatoria)
     this.crearPowerUpsVida(map);
     // --------------------------------------------------------
     // 7. COLISIONES
@@ -197,9 +197,9 @@ init(data) {
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.enemigos, this.platforms);
     // Nota: El fantasma atraviesa las plataformas intencionalmente, 
-    // por lo que NO le aÃ±adimos colisiÃ³n con this.platforms.
+    // por lo que NO le añadimos colisión con this.platforms.
 
-    // DestrucciÃ³n de la bomba al tocar el escenario o salir de pantalla
+    // Destrucción de la bomba al tocar el escenario o salir de pantalla
     this.physics.world.on('worldbounds', (body) => {
       if (body.gameObject && body.gameObject.texture.key === 'bomba') {
         body.gameObject.destroy();
@@ -211,33 +211,33 @@ init(data) {
     this.physics.add.overlap(this.bomba, this.enemigos, this.matarEnemigo, null, this);
     this.physics.add.overlap(this.bomba, this.enemigosVoladores, this.matarEnemigo, null, this);
 
-    // DaÃ±o al Jugador (Collider)
+    // Daño al Jugador (Collider)
     this.physics.add.collider(this.player, this.enemigos, this.danoJugador, null, this);
     this.physics.add.collider(this.player, this.enemigosVoladores, this.danoJugador, null, this);
 
-    // RecolecciÃ³n de Power-Ups de Vida
+    // Recolección de Power-Ups de Vida
     this.physics.add.overlap(this.player, this.powerUpsVida, this.recogerPowerUpVida, null, this);
 
     
     // GRUPO DE LLAVES
     this.keys = this.physics.add.group();
 
-    // LLAVE ORO
+    // Llave de Oro
     const llaveOro = this.keys.create(100, 350, 'llaveOro');
     llaveOro.setScale(0.1);
     llaveOro.body.allowGravity = false;
 
-    // LLAVE PLATA
+    // Llave de Plata
     const llavePlata = this.keys.create(880, 700, 'llavePlata');
     llavePlata.setScale(0.1);
     llavePlata.body.allowGravity = false;
 
-    // LLAVE BRONCE
+    // Llave de Bronce
     const llaveBronce = this.keys.create(850, 275, 'llaveBronce');
     llaveBronce.setScale(0.1);
     llaveBronce.body.allowGravity = false;
 
-    // COLISIÃ“N JUGADOR - LLAVES
+    // COLISIÓN JUGADOR - LLAVES
     this.physics.add.overlap(
       this.player,
       this.keys,
@@ -253,7 +253,7 @@ init(data) {
     this.puerta.body.allowGravity = false;
     this.puerta.setImmovable(true);
 
-    // COLISIÃ“N CON PUERTA
+    // COLISIÓN CON PUERTA
     this.physics.add.collider(
       this.player,
       this.puerta,
@@ -364,7 +364,7 @@ this.time.addEvent({
   }
 
   // ========================================================================
-  // MÃ‰TODOS DE ACTUALIZACIÃ“N (Separados por limpieza)
+  // MÃ‰TODOS DE ACTUALIZACIóN (Separados por limpieza)
   // ========================================================================
   
 actualizarJugador() {
@@ -455,20 +455,20 @@ actualizarJugador() {
     this.enemigosVoladores.getChildren().forEach((fantasma) => {
       const distancia = Phaser.Math.Distance.Between(this.player.x, this.player.y, fantasma.x, fantasma.y);
 
-      // Si estÃ¡s cerca (rango de agresiÃ³n)
+      // Si estás cerca (rango de agresión)
       if (distancia < 200) {
-        // Persigue al jugador en lÃ­nea recta flotando a travÃ©s de obstÃ¡culos
+        // Persigue al jugador en línea recta flotando a través de obstáculos
         this.physics.moveToObject(fantasma, this.player, 70); 
         fantasma.setFlipX(fantasma.body.velocity.x > 0);
       } 
-      // Si estÃ¡s lejos (Patrulla)
+      // Si estás lejos (Patrulla)
       else {
         fantasma.setVelocityX(40 * fantasma.direccion);
-        // OscilaciÃ³n matemÃ¡tica (Seno) para el efecto de flotar
+        // Oscilación matemática (Seno) para el efecto de flotar
         fantasma.setVelocityY(Math.sin(this.time.now / 300) * 30);
         fantasma.setFlipX(fantasma.direccion === 1);
 
-        // Si choca contra los lÃ­mites del mundo (o paredes si les pones colisiÃ³n)
+        // Si choca contra los límites del mundo (o paredes si les pones colisión)
         if (fantasma.body.blocked.right || fantasma.body.blocked.left) {
           fantasma.direccion *= -1;
         }
@@ -477,8 +477,9 @@ actualizarJugador() {
   }
 
   // ========================================================================
-  // ACCIONES Y LÃ“GICA DE JUEGO
+  // ACCIONES Y LÓGICA DE JUEGO
   // ========================================================================
+  // Power-Ups de Vida (corazones)
   crearPowerUpsVida(map) {
     this.powerUpsVida = this.physics.add.group({
       allowGravity: false,
@@ -503,18 +504,6 @@ actualizarJugador() {
     });
   }
 
-  actualizarTextoVida() {
-    if (this.textoVida) {
-      this.textoVida.setText(`Vidas: ${this.vida}/${this.vidaMaxima}`);
-    }
-  }
-
-  actualizarPuntuacion() {
-    if (this.puntos) {
-      this.puntos.setText('Puntuacion: ' + this.puntosCount);
-    }
-  }
-
   recogerPowerUpVida(jugador, corazon) {
     if (this.vida >= this.vidaMaxima) {
       return;
@@ -527,6 +516,8 @@ actualizarJugador() {
 
     this.sound.play('getKey');
   }
+
+  //Combate
   disparar() {
     if (this.direccionJugador === 1) {
       this.player.anims.play('right1', true);
@@ -596,45 +587,44 @@ actualizarJugador() {
       
       this.mostrarGameOver();
       return;
-      //this.time.delayedCall(1000, () => {
-        //this.scene.restart();
-      //});
     }
   }
 
+  // Interfaz
+  actualizarTextoVida() {
+    if (this.textoVida) {
+      this.textoVida.setText(`Vidas: ${this.vida}/${this.vidaMaxima}`);
+    }
+  }
+
+  actualizarPuntuacion() {
+    if (this.puntos) {
+      this.puntos.setText('Puntuacion: ' + this.puntosCount);
+    }
+  }
+
+  // Llaves y Puerta
   collectKey(player, key) {
-
-  key.destroy();
-
-  this.sound.play('getKey');
-
-  this.keyCount++;
-
-  this.keyText.setText(
-  'Llaves: ' + this.keyCount + '/3'
-);
-
-  console.log("Llaves:", this.keyCount);
+    key.destroy();
+    this.sound.play('getKey');
+    this.keyCount++;
+    this.keyText.setText('Llaves: ' + this.keyCount + '/3');
+    console.log("Llaves:", this.keyCount);
 }
 
-tryOpenDoor(player, puerta) {
-
+  tryOpenDoor(player, puerta) {
   // SI TIENE LAS 3 LLAVES
   if (this.keyCount >= 3) {
-
     this.scene.start('WinScene', {
       puntuacion: this.puntosCount,
       tiempoRestante: this.tiempoRestante,
       dificultad: this.dificultadActual
     });
-
   } 
   // SI NO LAS TIENE
   else {
-
     // evitar crear muchos textos
     if (!this.warningText) {
-
       this.warningText = this.add.text(
         this.cameras.main.width / 2,
         120,
@@ -647,20 +637,36 @@ tryOpenDoor(player, puerta) {
           padding: { x: 12, y: 6 },
         }
       ).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
-
       // el mensaje desaparece solo
       this.time.delayedCall(2000, () => {
-
         if (this.warningText) {
           this.warningText.destroy();
           this.warningText = null;
         }
-
       });
     }
   }
 }
+  mostrarMensajePuerta(texto) {
+  if (this.mensajePuerta) {
+    this.mensajePuerta.destroy();
+  }
 
+  this.mensajePuerta = this.add.text(this.player.x, this.player.y - 50, texto, {
+    fontFamily: "Arial",
+    fontSize: "18px",
+    color: "#ffffff",
+    backgroundColor: "rgba(0,0,0,0.75)",
+    padding: { x: 10, y: 6 },
+  }).setOrigin(0.5).setDepth(30);
+
+  this.time.delayedCall(1500, () => {
+    if (this.mensajePuerta) {
+      this.mensajePuerta.destroy();
+      this.mensajePuerta = null;
+    }
+  });
+}
   // ========================================================================
   // UTILIDADES
   // ========================================================================
@@ -681,7 +687,7 @@ tryOpenDoor(player, puerta) {
     // Efectos
     this.anims.create({ key: 'efecto_explosion', frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 12 }), frameRate: 15, repeat: 0, hideOnComplete: true });
 
-    // AnimaciÃ³n CorazÃ³n (Power-Up de Vida)
+    // Animaciónn Corazón (Power-Up de Vida)
     this.anims.create({ key: 'corazon_anim', frames: this.anims.generateFrameNumbers('corazon', { start: 0, end: 9 }), frameRate: 10, repeat: -1 });
   }
 
@@ -783,26 +789,7 @@ actualizarTiempo() {
     });
     console.error(message);
   }
-  mostrarMensajePuerta(texto) {
-  if (this.mensajePuerta) {
-    this.mensajePuerta.destroy();
-  }
 
-  this.mensajePuerta = this.add.text(this.player.x, this.player.y - 50, texto, {
-    fontFamily: "Arial",
-    fontSize: "18px",
-    color: "#ffffff",
-    backgroundColor: "rgba(0,0,0,0.75)",
-    padding: { x: 10, y: 6 },
-  }).setOrigin(0.5).setDepth(30);
-
-  this.time.delayedCall(1500, () => {
-    if (this.mensajePuerta) {
-      this.mensajePuerta.destroy();
-      this.mensajePuerta = null;
-    }
-  });
-}
 mostrarGameOver() {
   if (this.gameOverStarted) return;
 
