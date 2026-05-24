@@ -42,13 +42,16 @@ init(data) {
     if (nivel === 'facil') {
       this.cantidadEnemigosTerrestres = 5;
       this.cantidadEnemigosVoladores = 5;
+      this.cantidadPowerUpsVida = 8;
     } else if (nivel === 'dificil') {
       this.cantidadEnemigosTerrestres = 20;
       this.cantidadEnemigosVoladores = 15;
+      this.cantidadPowerUpsVida = 1;
     } else {
       // normal
       this.cantidadEnemigosTerrestres = 10;
       this.cantidadEnemigosVoladores = 10;
+      this.cantidadPowerUpsVida = 5;
     }
     
     // (Opcional) Guardamos la dificultad por si la necesitamos al reiniciar al morir
