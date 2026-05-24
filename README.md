@@ -35,6 +35,6 @@ No lo abras con doble clic. Usa Live Server / Live Preview en Visual Studio Code
 - ## Victor Gago Paz: 
     Creación de interfaz de usuario con contadores de llaves y vidas y de la mecánica de interacción jugador-puerta. Inicio creación escenas de "Win" y "Game Over". Versión jugable ejecutable directamente desde un navegador.
 - ## Carlos Pablos Rivero: 
-    Implementación de los enemigos terrestres que se mueven dentro de una plataforma y si ven al jugador van a por él y los fantasmas que atraviesan paredes y se mantienen moviéndose dentro de una zona y cuando ven al jugador también le persiguen. Efectos de sonido de daño de enemigos. Implementación de música. Creación de escena de selección del nivel de dificultad del juego y de escena de introducción
+    Implementación de los enemigos terrestres que se mueven dentro de una plataforma y si ven al jugador van a por él y los fantasmas que atraviesan paredes y se mantienen moviéndose dentro de una zona y cuando ven al jugador también le persiguen. Efectos de sonido de daño de enemigos. Implementación de música. Creación de escena de selección del nivel de dificultad del juego y de escena de introducción. Pulido de las escenas de "Win" y "GameOver" añadiendo añadiendo tecla R para volver al menú inicial.
 - ## Juan Carlos Jibaja 
     Creación de mapa usando Tiles. Colaboración en el README. Grabación del GamePlay
