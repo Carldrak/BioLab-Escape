@@ -9,23 +9,30 @@ export default class GameScene extends Phaser.Scene {
     this.bomba = null;
     this.direccionJugador = 1; // 1 = derecha, -1 = izquierda
     this.gameOver = false;
+    this.gameOverStarted = false;
+    
     this.keys = null;
-
+    this.keyText = null;
     this.keyCount = 0;
-    this.vida = 3;
-
+    
     this.cantidadEnemigosTerrestres = 10;
     this.cantidadEnemigosVoladores = 10;
 
     this.vidaMaxima = 3;
     this.vida = 3;
     this.cantidadPowerUpsVida = 5;
-
     this.powerUpsVida = null;
     this.textoVida = null;
-    this.keyText = null;
+
+    this.puntos = null;
+    this.puntosCount = 0;
 
     this.puerta = null;
+    this.mensajePuerta = null;
+
+    this.tiempoInicial = 120;
+    this.tiempoRestante = 120;
+    this.timeText = null;
 
   }
 
@@ -66,10 +73,16 @@ export default class GameScene extends Phaser.Scene {
 
   create() {
     this.gameOver = false;
+    this.gameOverStarted = false;
+    this.tiempoRestante = this.tiempoInicial;
+    this.puntuacion = 0;
+    this.puntosCount = 0;
+    this.keyCount = 0;
+    this.llavesRecogidas = 0;
     this.vida = this.vidaMaxima;
 
     // --------------------------------------------------------
-    // 2. CREACIÓN DEL ESCENARIO
+    // 2. CREACIÃ“N DEL ESCENARIO
     // --------------------------------------------------------
     const map = this.make.tilemap({ key: "mapa" });
     const tileset = map.addTilesetImage("rock_packed", "rock_packed");
@@ -82,14 +95,14 @@ export default class GameScene extends Phaser.Scene {
     this.platforms = map.createLayer("plataformas", tileset, 0, 0);
 
     if (!this.platforms) {
-      this.showError("No se encontró la capa 'plataformas' en el mapa.");
+      this.showError("No se encontrÃ³ la capa 'plataformas' en el mapa.");
       return;
     }
 
     this.platforms.setCollisionByExclusion([-1, 0]);
 
     // --------------------------------------------------------
-    // 3. CREACIÓN Y CONFIGURACIÓN DEL JUGADOR
+    // 3. CREACIÃ“N Y CONFIGURACIÃ“N DEL JUGADOR
     // --------------------------------------------------------
     const spawn = this.findSafeSpawn(map, this.platforms);
     this.player = this.physics.add.sprite(spawn.x, spawn.y, "dude1");
@@ -100,12 +113,12 @@ export default class GameScene extends Phaser.Scene {
     this.player.body.setOffset((this.player.width - 22) / 2, this.player.height - 34);
 
     // --------------------------------------------------------
-    // 4. CREACIÓN DE ANIMACIONES GLOBALES
+    // 4. CREACIÃ“N DE ANIMACIONES GLOBALES
     // --------------------------------------------------------
     this.crearAnimaciones();
 
     // --------------------------------------------------------
-    // 5. CÁMARA Y CONTROLES
+    // 5. CÃMARA Y CONTROLES
     // --------------------------------------------------------
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -124,7 +137,7 @@ export default class GameScene extends Phaser.Scene {
     this.muerteEnemigoSound = this.sound.add('muerte_enemigo');
     this.muerteFantasmaSound = this.sound.add('muerte_fantasma');
 
-    // Enemigos Terrestres (creación aleatoria  )
+    // Enemigos Terrestres (creaciÃ³n aleatoria  )
     this.enemigos = this.physics.add.group();
 
     for (let i = 0; i < this.cantidadEnemigosTerrestres; i++) {
@@ -136,7 +149,7 @@ export default class GameScene extends Phaser.Scene {
     enemigo.anims.play('caminar_enemigo', true);
 }
 
-    // Enemigos Voladores (Fantasmas) (creación aleatoria)
+    // Enemigos Voladores (Fantasmas) (creaciÃ³n aleatoria)
     this.enemigosVoladores = this.physics.add.group({ allowGravity: false });
 
     for (let i = 0; i < this.cantidadEnemigosVoladores; i++) {
@@ -149,7 +162,7 @@ export default class GameScene extends Phaser.Scene {
     fantasma.persiguiendo = false;         
     fantasma.anims.play('fantasma_enemigo', true);
 }
-    // Power-Ups de Vida (corazones) (creación aleatoria)
+    // Power-Ups de Vida (corazones) (creaciÃ³n aleatoria)
     this.crearPowerUpsVida(map);
     // --------------------------------------------------------
     // 7. COLISIONES
@@ -158,9 +171,9 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.enemigos, this.platforms);
     // Nota: El fantasma atraviesa las plataformas intencionalmente, 
-    // por lo que NO le añadimos colisión con this.platforms.
+    // por lo que NO le aÃ±adimos colisiÃ³n con this.platforms.
 
-    // Destrucción de la bomba al tocar el escenario o salir de pantalla
+    // DestrucciÃ³n de la bomba al tocar el escenario o salir de pantalla
     this.physics.world.on('worldbounds', (body) => {
       if (body.gameObject && body.gameObject.texture.key === 'bomba') {
         body.gameObject.destroy();
@@ -172,34 +185,33 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.bomba, this.enemigos, this.matarEnemigo, null, this);
     this.physics.add.overlap(this.bomba, this.enemigosVoladores, this.matarEnemigo, null, this);
 
-    // Daño al Jugador (Collider)
+    // DaÃ±o al Jugador (Collider)
     this.physics.add.collider(this.player, this.enemigos, this.danoJugador, null, this);
     this.physics.add.collider(this.player, this.enemigosVoladores, this.danoJugador, null, this);
 
-    // Recolección de Power-Ups de Vida
+    // RecolecciÃ³n de Power-Ups de Vida
     this.physics.add.overlap(this.player, this.powerUpsVida, this.recogerPowerUpVida, null, this);
+
     
     // GRUPO DE LLAVES
     this.keys = this.physics.add.group();
 
-// LLAVE ORO
+    // LLAVE ORO
     const llaveOro = this.keys.create(100, 350, 'llaveOro');
     llaveOro.setScale(0.1);
     llaveOro.body.allowGravity = false;
 
-// LLAVE PLATA
+    // LLAVE PLATA
     const llavePlata = this.keys.create(880, 700, 'llavePlata');
     llavePlata.setScale(0.1);
     llavePlata.body.allowGravity = false;
 
-    
-
-// LLAVE BRONCE
+    // LLAVE BRONCE
     const llaveBronce = this.keys.create(850, 275, 'llaveBronce');
     llaveBronce.setScale(0.1);
     llaveBronce.body.allowGravity = false;
 
-    // COLISIÓN JUGADOR - LLAVES
+    // COLISIÃ“N JUGADOR - LLAVES
     this.physics.add.overlap(
       this.player,
       this.keys,
@@ -215,8 +227,8 @@ export default class GameScene extends Phaser.Scene {
     this.puerta.body.allowGravity = false;
     this.puerta.setImmovable(true);
 
-    // COLISIÓN CON PUERTA
-    this.physics.add.overlap(
+    // COLISIÃ“N CON PUERTA
+    this.physics.add.collider(
       this.player,
       this.puerta,
       this.tryOpenDoor,
@@ -224,13 +236,6 @@ export default class GameScene extends Phaser.Scene {
       this
     );
 
-    this.keysCollectedText = this.add.text(16, 50, 'Llaves: 0/3', {
-    fontSize: '20px',
-    fill: '#ffffff'
-    });
-
-this.keysCollectedText.setScrollFactor(0);
-    
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
@@ -251,7 +256,7 @@ this.keysCollectedText.setScrollFactor(0);
     this.textoVida = this.add.text(
   130,
   120,
-  '❤️ Vidas: 3',
+  'Vidas: 3/3',
   {
     fontFamily: 'Arial',
     fontSize: '22px',
@@ -267,7 +272,7 @@ this.textoVida.setDepth(999);
   this.keyText = this.add.text(
   130,
   80,
-  '🔑 Llaves: 0/3',
+  'Llaves: 0/3',
   {
     fontFamily: 'Arial',
     fontSize: '22px',
@@ -279,6 +284,45 @@ this.textoVida.setDepth(999);
 
 this.keyText.setScrollFactor(0);
 this.keyText.setDepth(999);
+
+  this.puntos = this.add.text(
+  130,
+  200,
+  'Puntuacion: 0',
+  {
+    fontFamily: 'Arial',
+    fontSize: '22px',
+    color: '#ffffff',
+    backgroundColor: '#000000',
+    padding: { x: 10, y: 5 }
+  }
+);
+
+this.puntos.setScrollFactor(0);
+this.puntos.setDepth(999);
+
+  this.timeText = this.add.text(
+  130,
+  160,
+  'Tiempo: ' + this.tiempoRestante,
+  {
+    fontFamily: 'Arial',
+    fontSize: '22px',
+    color: '#ffffff',
+    backgroundColor: '#000000',
+    padding: { x: 10, y: 5 }
+  }
+);
+
+this.timeText.setScrollFactor(0);
+this.timeText.setDepth(999);
+
+this.time.addEvent({
+  delay: 1000,
+  callback: this.actualizarTiempo,
+  callbackScope: this,
+  loop: true
+});
   }
 
   // ========================================================================
@@ -294,7 +338,7 @@ this.keyText.setDepth(999);
   }
 
   // ========================================================================
-  // MÉTODOS DE ACTUALIZACIÓN (Separados por limpieza)
+  // MÃ‰TODOS DE ACTUALIZACIÃ“N (Separados por limpieza)
   // ========================================================================
   
   actualizarJugador() {
@@ -381,20 +425,20 @@ this.keyText.setDepth(999);
     this.enemigosVoladores.getChildren().forEach((fantasma) => {
       const distancia = Phaser.Math.Distance.Between(this.player.x, this.player.y, fantasma.x, fantasma.y);
 
-      // Si estás cerca (rango de agresión)
+      // Si estÃ¡s cerca (rango de agresiÃ³n)
       if (distancia < 200) {
-        // Persigue al jugador en línea recta flotando a través de obstáculos
+        // Persigue al jugador en lÃ­nea recta flotando a travÃ©s de obstÃ¡culos
         this.physics.moveToObject(fantasma, this.player, 70); 
         fantasma.setFlipX(fantasma.body.velocity.x > 0);
       } 
-      // Si estás lejos (Patrulla)
+      // Si estÃ¡s lejos (Patrulla)
       else {
         fantasma.setVelocityX(40 * fantasma.direccion);
-        // Oscilación matemática (Seno) para el efecto de flotar
+        // OscilaciÃ³n matemÃ¡tica (Seno) para el efecto de flotar
         fantasma.setVelocityY(Math.sin(this.time.now / 300) * 30);
         fantasma.setFlipX(fantasma.direccion === 1);
 
-        // Si choca contra los límites del mundo (o paredes si les pones colisión)
+        // Si choca contra los lÃ­mites del mundo (o paredes si les pones colisiÃ³n)
         if (fantasma.body.blocked.right || fantasma.body.blocked.left) {
           fantasma.direccion *= -1;
         }
@@ -403,7 +447,7 @@ this.keyText.setDepth(999);
   }
 
   // ========================================================================
-  // ACCIONES Y LÓGICA DE JUEGO
+  // ACCIONES Y LÃ“GICA DE JUEGO
   // ========================================================================
   crearPowerUpsVida(map) {
     this.powerUpsVida = this.physics.add.group({
@@ -431,7 +475,13 @@ this.keyText.setDepth(999);
 
   actualizarTextoVida() {
     if (this.textoVida) {
-      this.textoVida.setText(`Vida: ${this.vida}/${this.vidaMaxima}`);
+      this.textoVida.setText(`Vidas: ${this.vida}/${this.vidaMaxima}`);
+    }
+  }
+
+  actualizarPuntuacion() {
+    if (this.puntos) {
+      this.puntos.setText('Puntuacion: ' + this.puntosCount);
     }
   }
 
@@ -466,6 +516,13 @@ this.keyText.setDepth(999);
     bomba.destroy();
     enemigo.destroy();
 
+    if (enemigo.texture.key === 'enemigo') {
+      this.puntosCount += 10;
+    } else {
+      this.puntosCount += 20;
+    }
+    this.actualizarPuntuacion();
+
     const explosion = this.add.sprite(expX, expY, 'explosion');
     explosion.play('efecto_explosion');
 
@@ -498,14 +555,15 @@ this.keyText.setDepth(999);
     });
 
     if (this.vida <= 0) {
-      this.gameOver = true;
       this.physics.pause();
       jugador.setTint(0xff0000);
       jugador.anims.play('turn1');
-
-      this.time.delayedCall(1000, () => {
-        this.scene.restart();
-      });
+      
+      this.mostrarGameOver();
+      return;
+      //this.time.delayedCall(1000, () => {
+        //this.scene.restart();
+      //});
     }
   }
 
@@ -518,7 +576,7 @@ this.keyText.setDepth(999);
   this.keyCount++;
 
   this.keyText.setText(
-  '🔑 Llaves: ' + this.keyCount + '/3'
+  'Llaves: ' + this.keyCount + '/3'
 );
 
   console.log("Llaves:", this.keyCount);
@@ -529,7 +587,10 @@ tryOpenDoor(player, puerta) {
   // SI TIENE LAS 3 LLAVES
   if (this.keyCount >= 3) {
 
-    this.scene.start('WinScene');
+    this.scene.start('WinScene', {
+      puntuacion: this.puntosCount,
+      tiempoRestante: this.tiempoRestante,
+    });
 
   } 
   // SI NO LAS TIENE
@@ -539,15 +600,17 @@ tryOpenDoor(player, puerta) {
     if (!this.warningText) {
 
       this.warningText = this.add.text(
-        this.player.x - 120,
-        this.player.y - 100,
+        this.cameras.main.width / 2,
+        120,
         'Necesitas las 3 llaves',
         {
+          fontFamily: 'Arial',
           fontSize: '24px',
-          fill: '#ff0000',
-          backgroundColor: '#000'
+          color: '#ff4444',
+          backgroundColor: '#000000',
+          padding: { x: 12, y: 6 },
         }
-      );
+      ).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
 
       // el mensaje desaparece solo
       this.time.delayedCall(2000, () => {
@@ -582,7 +645,7 @@ tryOpenDoor(player, puerta) {
     // Efectos
     this.anims.create({ key: 'efecto_explosion', frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 12 }), frameRate: 15, repeat: 0, hideOnComplete: true });
 
-    // Animación Corazón (Power-Up de Vida)
+    // AnimaciÃ³n CorazÃ³n (Power-Up de Vida)
     this.anims.create({ key: 'corazon_anim', frames: this.anims.generateFrameNumbers('corazon', { start: 0, end: 9 }), frameRate: 10, repeat: -1 });
   }
 
@@ -658,6 +721,21 @@ tryOpenDoor(player, puerta) {
   return { x: 200, y: 100 };
 }
 
+actualizarTiempo() {
+  if (this.gameOver) return;
+
+  this.tiempoRestante -= 1;
+  this.actualizarInterfaz();
+
+  if (this.tiempoRestante <= 0) {
+    this.mostrarGameOver();
+  }
+}
+  actualizarInterfaz() {
+    if (this.timeText) {
+      this.timeText.setText('Tiempo: ' + this.tiempoRestante);
+    }
+  }
   showError(message) {
     this.add.text(30, 30, message, {
       fontFamily: "Arial",
@@ -669,6 +747,40 @@ tryOpenDoor(player, puerta) {
     });
     console.error(message);
   }
+  mostrarMensajePuerta(texto) {
+  if (this.mensajePuerta) {
+    this.mensajePuerta.destroy();
+  }
+
+  this.mensajePuerta = this.add.text(this.player.x, this.player.y - 50, texto, {
+    fontFamily: "Arial",
+    fontSize: "18px",
+    color: "#ffffff",
+    backgroundColor: "rgba(0,0,0,0.75)",
+    padding: { x: 10, y: 6 },
+  }).setOrigin(0.5).setDepth(30);
+
+  this.time.delayedCall(1500, () => {
+    if (this.mensajePuerta) {
+      this.mensajePuerta.destroy();
+      this.mensajePuerta = null;
+    }
+  });
+}
+mostrarGameOver() {
+  if (this.gameOverStarted) return;
+
+  this.gameOver = true;
+  this.gameOverStarted = true;
+  this.physics.pause();
+
+  this.time.delayedCall(600, () => {
+    this.scene.start("GameOverScene", {
+      puntuacion: this.puntosCount,
+      tiempoRestante: this.tiempoRestante,
+    });
+  });
+}
   actualizarEnemigosFantasmas() {
     this.enemigosVoladores.getChildren().forEach((fantasma) => {
       const distancia = Phaser.Math.Distance.Between(this.player.x, this.player.y, fantasma.x, fantasma.y);
@@ -678,7 +790,7 @@ tryOpenDoor(player, puerta) {
         fantasma.persiguiendo = true; 
         this.physics.moveToObject(fantasma, this.player, 70); 
         
-        // [CORREGIDO] Invertimos la lógica: ahora voltea si la velocidad en X es menor a 0
+        // [CORREGIDO] Invertimos la lÃ³gica: ahora voltea si la velocidad en X es menor a 0
         fantasma.setFlipX(fantasma.body.velocity.x < 0); 
       } 
       // ESTADO 2: PATRULLAR
@@ -691,7 +803,7 @@ tryOpenDoor(player, puerta) {
         fantasma.setVelocityX(40 * fantasma.direccion);
         fantasma.setVelocityY(Math.sin(this.time.now / 300) * 30); 
         
-        // [CORREGIDO] Invertimos la lógica: ahora voltea si la dirección es -1
+        // [CORREGIDO] Invertimos la lÃ³gica: ahora voltea si la direcciÃ³n es -1
         fantasma.setFlipX(fantasma.direccion === -1);
 
         if (fantasma.x > fantasma.startX + fantasma.rangoPatrulla) {
