@@ -1,4 +1,4 @@
-export default class WinScene extends Phaser.Scene {
+﻿export default class WinScene extends Phaser.Scene {
   constructor() {
     super({ key: 'WinScene' });
   }
@@ -9,44 +9,48 @@ export default class WinScene extends Phaser.Scene {
   }
 
   create() {
+    const centerX = this.scale.width / 2;
+    const centerY = this.scale.height / 2;
 
     this.sound.stopAll();
     this.sound.play('musica_victoria', { loop: false, volume: 0.6 });
-    
-    this.add.text(480, 270, '¡Has ganado!', {
-      fontSize: '32px',
-      fill: '#ffffff'
+
+    this.add.text(centerX, centerY - 110, 'Has ganado', {
+      fontFamily: 'Arial',
+      fontSize: '48px',
+      color: '#6cff7c',
     }).setOrigin(0.5);
 
-    this.add.text(400, 290, `Puntos por enemigos: ${this.puntuacion}`, {
-      fontFamily: "Arial",
-      fontSize: "24px",
-      color: "#ffffff",
+    this.add.text(centerX, centerY - 35, `Puntos por enemigos: ${this.puntuacion}`, {
+      fontFamily: 'Arial',
+      fontSize: '24px',
+      color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.add.text(400, 330, `Tiempo restante: ${this.tiempoRestante}`, {
-      fontFamily: "Arial",
-      fontSize: "24px",
-      color: "#ffffff",
+    this.add.text(centerX, centerY + 5, `Tiempo restante: ${this.tiempoRestante}`, {
+      fontFamily: 'Arial',
+      fontSize: '24px',
+      color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.add.text(400, 400, "Pulsa ESPACIO para jugar otra vez", {
-      fontFamily: "Arial",
-      fontSize: "20px",
-      color: "#ffffff",
+    this.add.text(centerX, centerY + 80, 'Pulsa ESPACIO para jugar otra vez', {
+      fontFamily: 'Arial',
+      fontSize: '20px',
+      color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.add.text(400, 430, "Pulsa R para volver al menú", {
-      fontFamily: "Arial",
-      fontSize: "20px",
-      color: "#ffffff",
+    this.add.text(centerX, centerY + 115, 'Pulsa R para volver al menu', {
+      fontFamily: 'Arial',
+      fontSize: '20px',
+      color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.input.keyboard.once("keydown-SPACE", () => {
-      this.scene.start("GameScene");
+    this.input.keyboard.once('keydown-SPACE', () => {
+      this.scene.start('GameScene');
     });
-     this.input.keyboard.once("keydown-R", () => {
-      this.scene.start("MenuScene");
+
+    this.input.keyboard.once('keydown-R', () => {
+      this.scene.start('MenuScene');
     });
   }
 }
