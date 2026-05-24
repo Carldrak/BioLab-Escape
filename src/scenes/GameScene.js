@@ -9,6 +9,10 @@ export default class GameScene extends Phaser.Scene {
     this.bomba = null;
     this.direccionJugador = 1; // 1 = derecha, -1 = izquierda
     this.gameOver = false;
+    this.keys = null;
+
+    this.keyCount = 0;
+    this.vida = 3;
 
     this.cantidadEnemigosTerrestres = 10;
     this.cantidadEnemigosVoladores = 10;
@@ -19,6 +23,9 @@ export default class GameScene extends Phaser.Scene {
 
     this.powerUpsVida = null;
     this.textoVida = null;
+    this.keyText = null;
+
+    this.puerta = null;
 
   }
 
@@ -171,6 +178,65 @@ export default class GameScene extends Phaser.Scene {
 
     // Recolección de Power-Ups de Vida
     this.physics.add.overlap(this.player, this.powerUpsVida, this.recogerPowerUpVida, null, this);
+    
+    // GRUPO DE LLAVES
+    this.keys = this.physics.add.group();
+
+// LLAVE ORO
+    const llaveOro = this.keys.create(100, 350, 'llaveOro');
+    llaveOro.setScale(0.1);
+    llaveOro.body.allowGravity = false;
+
+// LLAVE PLATA
+    const llavePlata = this.keys.create(880, 700, 'llavePlata');
+    llavePlata.setScale(0.1);
+    llavePlata.body.allowGravity = false;
+
+    
+
+// LLAVE BRONCE
+    const llaveBronce = this.keys.create(850, 275, 'llaveBronce');
+    llaveBronce.setScale(0.1);
+    llaveBronce.body.allowGravity = false;
+
+    // COLISIÓN JUGADOR - LLAVES
+    this.physics.add.overlap(
+      this.player,
+      this.keys,
+      this.collectKey,
+      null,
+      this
+    );
+
+    // PUERTA FINAL
+    this.puerta = this.physics.add.sprite(960, 855, 'puerta');
+
+    this.puerta.setScale(0.1);
+    this.puerta.body.allowGravity = false;
+    this.puerta.setImmovable(true);
+
+    // COLISIÓN CON PUERTA
+    this.physics.add.overlap(
+      this.player,
+      this.puerta,
+      this.tryOpenDoor,
+      null,
+      this
+    );
+
+    this.keysCollectedText = this.add.text(16, 50, 'Llaves: 0/3', {
+    fontSize: '20px',
+    fill: '#ffffff'
+    });
+
+this.keysCollectedText.setScrollFactor(0);
+    
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
+    this.cameras.main.setZoom(1.4);
+    
+    
     // --------------------------------------------------------
     // 8. UI
     // --------------------------------------------------------
@@ -182,14 +248,37 @@ export default class GameScene extends Phaser.Scene {
       padding: { x: 8, y: 5 },
     }).setScrollFactor(0).setDepth(10);
 
-    this.textoVida = this.add.text(12, 76, "", {
-      fontFamily: "Arial",
-      fontSize: "16px",
-      color: "#ffffff",
-      backgroundColor: "rgba(0,0,0,0.55)",
-      padding: { x: 8, y: 5 },
-}).setScrollFactor(0).setDepth(10);
-    this.actualizarTextoVida();
+    this.textoVida = this.add.text(
+  130,
+  120,
+  '❤️ Vidas: 3',
+  {
+    fontFamily: 'Arial',
+    fontSize: '22px',
+    color: '#ffffff',
+    backgroundColor: '#000000',
+    padding: { x: 10, y: 5 }
+  }
+);
+
+this.textoVida.setScrollFactor(0);
+this.textoVida.setDepth(999);
+
+  this.keyText = this.add.text(
+  130,
+  80,
+  '🔑 Llaves: 0/3',
+  {
+    fontFamily: 'Arial',
+    fontSize: '22px',
+    color: '#ffffff',
+    backgroundColor: '#000000',
+    padding: { x: 10, y: 5 }
+  }
+);
+
+this.keyText.setScrollFactor(0);
+this.keyText.setDepth(999);
   }
 
   // ========================================================================
@@ -419,6 +508,59 @@ export default class GameScene extends Phaser.Scene {
       });
     }
   }
+
+  collectKey(player, key) {
+
+  key.destroy();
+
+  this.sound.play('getKey');
+
+  this.keyCount++;
+
+  this.keyText.setText(
+  '🔑 Llaves: ' + this.keyCount + '/3'
+);
+
+  console.log("Llaves:", this.keyCount);
+}
+
+tryOpenDoor(player, puerta) {
+
+  // SI TIENE LAS 3 LLAVES
+  if (this.keyCount >= 3) {
+
+    this.scene.start('WinScene');
+
+  } 
+  // SI NO LAS TIENE
+  else {
+
+    // evitar crear muchos textos
+    if (!this.warningText) {
+
+      this.warningText = this.add.text(
+        this.player.x - 120,
+        this.player.y - 100,
+        'Necesitas las 3 llaves',
+        {
+          fontSize: '24px',
+          fill: '#ff0000',
+          backgroundColor: '#000'
+        }
+      );
+
+      // el mensaje desaparece solo
+      this.time.delayedCall(2000, () => {
+
+        if (this.warningText) {
+          this.warningText.destroy();
+          this.warningText = null;
+        }
+
+      });
+    }
+  }
+}
 
   // ========================================================================
   // UTILIDADES
