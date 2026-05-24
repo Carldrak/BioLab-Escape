@@ -364,7 +364,7 @@ this.time.addEvent({
   }
 
   // ========================================================================
-  // MÃ‰TODOS DE ACTUALIZACIóN (Separados por limpieza)
+  // MÉTODOS DE ACTUALIZACIÓN (Separados por limpieza)
   // ========================================================================
   
 actualizarJugador() {
@@ -593,13 +593,13 @@ actualizarJugador() {
   // Interfaz
   actualizarTextoVida() {
     if (this.textoVida) {
-      this.textoVida.setText(`Vidas: ${this.vida}/${this.vidaMaxima}`);
+      this.textoVida.setText(`❤️Vidas: ${this.vida}/${this.vidaMaxima}`);
     }
   }
 
   actualizarPuntuacion() {
     if (this.puntos) {
-      this.puntos.setText('Puntuacion: ' + this.puntosCount);
+      this.puntos.setText('🏆Puntuacion: ' + this.puntosCount);
     }
   }
 
@@ -608,7 +608,7 @@ actualizarJugador() {
     key.destroy();
     this.sound.play('getKey');
     this.keyCount++;
-    this.keyText.setText('Llaves: ' + this.keyCount + '/3');
+    this.keyText.setText('🗝️Llaves: ' + this.keyCount + '/3');
     console.log("Llaves:", this.keyCount);
 }
 
@@ -775,7 +775,7 @@ actualizarTiempo() {
 }
   actualizarInterfaz() {
     if (this.timeText) {
-      this.timeText.setText('Tiempo: ' + this.tiempoRestante);
+      this.timeText.setText('⏳Tiempo: ' + this.tiempoRestante);
     }
   }
   showError(message) {
