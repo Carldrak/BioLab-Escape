@@ -36,8 +36,17 @@ export default class WinScene extends Phaser.Scene {
       color: "#ffffff",
     }).setOrigin(0.5);
 
+    this.add.text(400, 430, "Pulsa R para volver al menú", {
+      fontFamily: "Arial",
+      fontSize: "20px",
+      color: "#ffffff",
+    }).setOrigin(0.5);
+
     this.input.keyboard.once("keydown-SPACE", () => {
       this.scene.start("GameScene");
+    });
+     this.input.keyboard.once("keydown-R", () => {
+      this.scene.start("MenuScene");
     });
   }
 }
