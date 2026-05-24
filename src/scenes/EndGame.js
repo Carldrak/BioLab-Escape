@@ -9,6 +9,10 @@ init(data = {}) {
   }
 
   create() {
+
+    this.sound.stopAll();
+    this.sound.play('musica_derrota', { loop: false, volume: 0.6 });
+
     this.add.text(400, 220, "GAME OVER", {
       fontFamily: "Arial",
       fontSize: "48px",

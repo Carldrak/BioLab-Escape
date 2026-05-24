@@ -9,6 +9,10 @@ export default class WinScene extends Phaser.Scene {
   }
 
   create() {
+
+    this.sound.stopAll();
+    this.sound.play('musica_victoria', { loop: false, volume: 0.6 });
+    
     this.add.text(480, 270, '¡Has ganado!', {
       fontSize: '32px',
       fill: '#ffffff'

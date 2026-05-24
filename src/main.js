@@ -1,5 +1,7 @@
 import GameScene from "./scenes/GameScene.js";
 import MenuScene from "./scenes/MenuScene.js";
+import IntroScene from "./scenes/IntroScene.js";
+import DifficultyScene from "./scenes/DifficultyScene.js";
 import EndGame from "./scenes/EndGame.js";
 import WinScene from "./scenes/WinScene.js";
 
@@ -21,7 +23,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [MenuScene,GameScene,EndGame,WinScene],
+  scene: [MenuScene,DifficultyScene,IntroScene,GameScene,EndGame,WinScene],
 };
 
 new Phaser.Game(config);

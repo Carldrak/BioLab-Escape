@@ -1,6 +1,6 @@
 export default class GameScene extends Phaser.Scene {
   constructor() {
-    super("GameScene");
+    super('GameScene');
     this.player = null;
     this.cursors = null;
     this.platforms = null;
@@ -35,7 +35,25 @@ export default class GameScene extends Phaser.Scene {
     this.timeText = null;
 
   }
+init(data) {
+    // Si no llega nada (por ejemplo, si reiniciamos tras morir), por defecto es 'normal'
+    const nivel = data.dificultad || 'normal';
 
+    if (nivel === 'facil') {
+      this.cantidadEnemigosTerrestres = 5;
+      this.cantidadEnemigosVoladores = 5;
+    } else if (nivel === 'dificil') {
+      this.cantidadEnemigosTerrestres = 20;
+      this.cantidadEnemigosVoladores = 15;
+    } else {
+      // normal
+      this.cantidadEnemigosTerrestres = 10;
+      this.cantidadEnemigosVoladores = 10;
+    }
+    
+    // (Opcional) Guardamos la dificultad por si la necesitamos al reiniciar al morir
+    this.dificultadActual = nivel; 
+  }
   preload() {
     // --------------------------------------------------------
     // 1. CARGA DE ASSETS (Mapas, Sprites, Audios)
@@ -81,6 +99,11 @@ export default class GameScene extends Phaser.Scene {
     this.llavesRecogidas = 0;
     this.vida = this.vidaMaxima;
 
+    this.sound.stopAll();
+    this.sound.play('musica_juego', { loop: true, volume: 0.3 }); // Volumen bajito para que se oigan los disparos
+    
+    this.gameOver = false;
+    this.gameOverStarted = false;
     // --------------------------------------------------------
     // 2. CREACIÃ“N DEL ESCENARIO
     // --------------------------------------------------------
@@ -341,7 +364,7 @@ this.time.addEvent({
   // MÃ‰TODOS DE ACTUALIZACIÃ“N (Separados por limpieza)
   // ========================================================================
   
-  actualizarJugador() {
+actualizarJugador() {
     // Movimiento Horizontal
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-160);
@@ -353,7 +376,11 @@ this.time.addEvent({
       this.direccionJugador = 1;
     } else {
       this.player.setVelocityX(0);
-      this.player.anims.play('turn1', true);
+      
+      // Solo pone la animación de estar quieto si NO estás disparando
+      if (!this.teclaDisparo.isDown) {
+        this.player.anims.play('turn1', true);
+      }
     }   
     
     // Salto
@@ -498,6 +525,11 @@ this.time.addEvent({
     this.sound.play('getKey');
   }
   disparar() {
+    if (this.direccionJugador === 1) {
+      this.player.anims.play('right1', true);
+    } else {
+      this.player.anims.play('left1', true);
+    }
     this.disparoSound.play();
     const bomba = this.bomba.create(
       this.player.x + this.direccionJugador * 25,
@@ -590,6 +622,7 @@ tryOpenDoor(player, puerta) {
     this.scene.start('WinScene', {
       puntuacion: this.puntosCount,
       tiempoRestante: this.tiempoRestante,
+      dificultad: this.dificultadActual
     });
 
   } 
@@ -778,6 +811,7 @@ mostrarGameOver() {
     this.scene.start("GameOverScene", {
       puntuacion: this.puntosCount,
       tiempoRestante: this.tiempoRestante,
+      dificultad: this.dificultadActual,
     });
   });
 }

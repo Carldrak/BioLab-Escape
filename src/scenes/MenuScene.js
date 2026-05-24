@@ -3,22 +3,41 @@ export default class MenuScene extends Phaser.Scene {
     super('MenuScene');
   }
 
-  create() {
-    this.add.text(350, 180, 'BIOLAB SCAPE', {
-      fontSize: '56px',
-      color: '#6cff7c'
-    });
+  preload() {
+    this.load.audio('musica_menu', './assets/audio/menu_music.wav');
+    this.load.audio('musica_juego', './assets/audio/game_music.wav');
+    this.load.audio('musica_victoria', './assets/audio/win_music.ogg');
+    this.load.audio('musica_derrota', './assets/audio/lose_music.wav');
+  }
 
-    const play = this.add.text(480, 330, 'JUGAR', {
+  create() {
+    // Detenemos cualquier música que pudiera estar sonando antes de iniciar la del menú
+    this.sound.stopAll();
+    // Iniciamos la música del menú en bucle con un volumen moderado
+    this.sound.play('musica_menu', { loop: true, volume: 0.5 });
+
+    // Guardamos el centro exacto de la pantalla en una variable
+    const centroX = this.cameras.main.width / 2;
+
+    // Título perfectamente centrado
+    this.add.text(centroX, 180, 'BIOLAB ESCAPE', {
+      fontSize: '56px',
+      color: '#6cff7c',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5); // <-- Anclamos el centro del texto a centroX
+
+    // Botón centrado
+    const play = this.add.text(centroX, 330, 'JUGAR', {
       fontSize: '36px',
       color: '#ffffff',
       backgroundColor: '#1f5f3a',
       padding: { x: 20, y: 10 }
-    }).setInteractive();
+    }).setOrigin(0.5).setInteractive(); // <-- También centrado
 
-    play.on('pointerdown', () => {
-      this.scene.start('GameScene');
+    // Usamos .once para evitar cargar la IntroScene dos veces si haces doble clic
+    play.once('pointerdown', () => {
+      this.scene.start('DifficultyScene');
     });
-
   }
 }
